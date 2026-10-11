@@ -9,8 +9,6 @@ const DEFAULT_STATE = {
   opts: { max: 100, detailed: true, emails: false },
   results: [],
   log: '',
-  sheetPending: [], // rows waiting to be sent to Google Sheet
-  sheetLog: '',
 };
 
 let state = null;
@@ -90,70 +88,6 @@ async function findEmails(website) {
   return emails.slice(0, 5).join('; ');
 }
 
-// ---------- Google Sheet (via Apps Script web app) ----------
-
-async function sheetConfig() {
-  const { sheet } = await chrome.storage.local.get('sheet');
-  return sheet && sheet.sheetId && sheet.scriptUrl ? sheet : null;
-}
-
-async function postSheet(cfg, rows) {
-  const res = await fetch(cfg.scriptUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ secret: cfg.secret, sheetId: cfg.sheetId, gid: cfg.gid, rows }),
-  });
-  const body = await res.text();
-  try {
-    return JSON.parse(body);
-  } catch (_) {
-    return { ok: false, error: `Apps Script theke JSON ashe nai (HTTP ${res.status}). URL/deploy access check koro.` };
-  }
-}
-
-let flushTimer = null;
-let flushing = false;
-
-async function queueForSheet(items, force = false) {
-  const cfg = await sheetConfig();
-  if (!cfg || (!cfg.auto && !force)) return;
-  await load();
-  state.sheetPending.push(...items);
-  await save();
-  clearTimeout(flushTimer);
-  if (state.sheetPending.length >= 10 || force) flushSheet();
-  else flushTimer = setTimeout(flushSheet, 4000);
-}
-
-async function flushSheet() {
-  if (flushing) return;
-  await load();
-  const cfg = await sheetConfig();
-  if (!cfg || !state.sheetPending.length) return;
-  flushing = true;
-  let ok = false;
-  const batch = state.sheetPending.slice(0, 200);
-  try {
-    const res = await postSheet(cfg, batch);
-    if (res.ok) {
-      ok = true;
-      state.sheetPending.splice(0, batch.length);
-      state.sheetTotal = (state.sheetTotal || 0) + res.added;
-      state.sheetUpdated = (state.sheetUpdated || 0) + (res.updated || 0);
-      state.sheetLog = `Sheet "${res.sheet}" e ${state.sheetTotal} ta notun row, ${state.sheetUpdated} ta row update`;
-    } else {
-      state.sheetLog = `Sheet error: ${res.error}`;
-    }
-  } catch (e) {
-    state.sheetLog = `Sheet error: ${e.message}`;
-  } finally {
-    flushing = false;
-    await save();
-  }
-  // Rows that failed stay in sheetPending and are retried on the next flush.
-  if (ok && state.sheetPending.length) flushSheet();
-}
-
 // ---------- Messages ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
@@ -202,7 +136,6 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         state.log = `Stopped. Mot ${state.results.length} ta result.`;
         await save();
         if (state.tabId != null) chrome.tabs.sendMessage(state.tabId, { type: 'stop' }).catch(() => {});
-        flushSheet();
         reply({ ok: true });
         break;
       }
@@ -210,9 +143,6 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       case 'clear': {
         state.results = [];
         state.log = '';
-        state.sheetTotal = 0;
-        state.sheetUpdated = 0;
-        state.sheetLog = '';
         await save();
         reply({ ok: true });
         break;
@@ -231,49 +161,18 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         state.log = `${state.current || 'Scraping'} — ${state.results.length} ta result`;
         await save();
         if (state.opts.emails && item.website && !item.emails) {
-          // Send to the sheet only after the email lookup, so the row is complete.
           findEmails(item.website).then(async (emails) => {
             if (emails) {
               item.emails = emails;
               await save();
             }
-            queueForSheet([item]);
           });
-        } else {
-          queueForSheet([item]);
         }
-        reply({ ok: true });
-        break;
-      }
-
-      case 'testSheet': {
-        const cfg = await sheetConfig();
-        if (!cfg) state.sheetLog = 'Sheet error: Sheet ID ar Apps Script URL duitai lagbe';
-        else {
-          try {
-            const res = await postSheet(cfg, []);
-            state.sheetLog = res.ok ? `Connected! Sheet: "${res.sheet}"` : `Sheet error: ${res.error}`;
-          } catch (e) {
-            state.sheetLog = `Sheet error: ${e.message}`;
-          }
-        }
-        await save();
-        reply({ ok: true });
-        break;
-      }
-
-      case 'syncSheet': {
-        // Sheet skips rows it already has, so re-sending everything is safe.
-        state.sheetPending = [];
-        state.sheetLog = `${state.results.length} ta result Sheet e pathano hocche...`;
-        await save();
-        await queueForSheet(state.results, true);
         reply({ ok: true });
         break;
       }
 
       case 'done': {
-        flushSheet();
         if (state.status === 'running') {
           await jitterDelay();
           await nextQuery();

@@ -9,9 +9,6 @@ function render(state) {
   results = state.results || [];
   $('n').textContent = results.length;
   $('status').textContent = state.log || (state.status === 'running' ? 'Running...' : 'Idle');
-  const ss = $('sheetStatus');
-  ss.textContent = state.sheetLog || '';
-  ss.className = /error|nai/i.test(state.sheetLog || '') ? 'error' : '';
   const running = state.status === 'running';
   document.body.classList.toggle('running', running);
   $('badge').textContent = running ? 'Running' : 'Idle';
@@ -31,58 +28,15 @@ function render(state) {
 }
 
 async function init() {
-  const { state, prefs, sheet } = await chrome.storage.local.get(['state', 'prefs', 'sheet']);
+  const { state, prefs } = await chrome.storage.local.get(['state', 'prefs']);
   if (prefs) {
     $('queries').value = prefs.queries || '';
     $('max').value = prefs.max || 100;
     $('detailed').checked = prefs.detailed !== false;
     $('emails').checked = !!prefs.emails;
   }
-  if (sheet) {
-    $('sheetId').value = sheet.input || '';
-    $('scriptUrl').value = sheet.scriptUrl || '';
-    $('secret').value = sheet.secret || '';
-    $('autoSheet').checked = !!sheet.auto;
-    if (sheet.auto) $('sheetBox').open = true;
-  }
   render(state);
 }
-
-// Accepts a bare ID or a full docs.google.com/spreadsheets/d/<id>/edit#gid=<gid> link.
-function parseSheet(input) {
-  const s = input.trim();
-  const id = (s.match(/\/d\/([a-zA-Z0-9_-]+)/) || [])[1] || s;
-  const gid = (s.match(/gid=(\d+)/) || [])[1] || '';
-  return { sheetId: id, gid };
-}
-
-function saveSheetConfig() {
-  const input = $('sheetId').value;
-  return chrome.storage.local.set({
-    sheet: {
-      input,
-      ...parseSheet(input),
-      scriptUrl: $('scriptUrl').value.trim(),
-      secret: $('secret').value,
-      auto: $('autoSheet').checked,
-    },
-  });
-}
-
-for (const id of ['sheetId', 'scriptUrl', 'secret', 'autoSheet']) {
-  $(id).addEventListener('change', saveSheetConfig);
-}
-
-$('testSheet').addEventListener('click', async () => {
-  await saveSheetConfig();
-  $('sheetStatus').textContent = 'Checking...';
-  chrome.runtime.sendMessage({ type: 'testSheet' });
-});
-
-$('syncSheet').addEventListener('click', async () => {
-  await saveSheetConfig();
-  chrome.runtime.sendMessage({ type: 'syncSheet' });
-});
 
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.state) render(changes.state.newValue);
@@ -96,7 +50,6 @@ $('start').addEventListener('click', async () => {
     emails: $('emails').checked,
   };
   await chrome.storage.local.set({ prefs: { queries: $('queries').value, ...opts } });
-  await saveSheetConfig();
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!queries.length && !(tab.url || '').startsWith('https://www.google.com/maps')) {
