@@ -18,23 +18,23 @@
     <section class="card">
       <label class="field-label" for="queries">Search query</label>
       <textarea id="queries" rows="3" placeholder="restaurants in Dhanmondi&#10;hotels in Cox's Bazar"></textarea>
-      <p class="hint">Protiti line e ekta query. Faka rakhle current Maps tab scrape korbe.</p>
+      <p class="hint">One query per line. Leave empty to scrape the current Maps tab.</p>
 
       <label class="toggle">
         <span><b>Detail mode</b><small>Phone, website, full address — slow</small></span>
         <input id="detailed" type="checkbox" checked><i></i>
       </label>
       <label class="toggle">
-        <span><b>Email khujo</b><small>Website theke email ber kore</small></span>
+        <span><b>Find emails</b><small>Extracts emails from the website</small></span>
         <input id="emails" type="checkbox"><i></i>
       </label>
       <label class="toggle">
-        <span><b>Ager gulo skip koro</b><small>Age scrape kora jayga abar nibe na</small></span>
+        <span><b>Skip previous</b><small>Don't scrape already scraped places again</small></span>
         <input id="skipSeen" type="checkbox" checked><i></i>
       </label>
       <div class="inline history">
-        <span>History: <b id="seenCount">0</b> ta jayga</span>
-        <button id="resetSeen" class="chip danger" title="History muche felo, abar sob jayga nibe">Reset</button>
+        <span>History: <b id="seenCount">0</b> places</span>
+        <button id="resetSeen" class="chip danger" title="Clear history, all places will be scraped again">Reset</button>
       </div>
     </section>
 
@@ -62,7 +62,7 @@
       <button id="json" class="chip">
         <svg viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3zM5 18h14v2H5z"/></svg>JSON
       </button>
-      <button id="clear" class="chip danger" title="Sob result muche felo (history thakbe)">
+      <button id="clear" class="chip danger" title="Delete all results (history is kept)">
         <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7zM9 4h6l1 2H8z"/></svg>Clear
       </button>
     </div>

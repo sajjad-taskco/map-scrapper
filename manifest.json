@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Map Scrapper",
   "version": "1.0.0",
-  "description": "Google Maps theke business er name, phone, website, address, rating, email scrape kore CSV/JSON e export kore.",
+  "description": "Scrapes business name, phone, website, address, rating and email from Google Maps and exports to CSV/JSON.",
   "permissions": [
     "storage",
     "unlimitedStorage",

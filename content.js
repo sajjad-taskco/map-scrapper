@@ -191,7 +191,7 @@ async function scrape(opts) {
           item = { ...item, ...parseDetail(pane) };
           prevName = item.name;
         } else {
-          console.warn('[Map Scrapper] detail pane paowa jay nai:', item.name);
+          console.warn('[Map Scrapper] detail pane not found:', item.name);
         }
         await jitter(300, 800);
       }

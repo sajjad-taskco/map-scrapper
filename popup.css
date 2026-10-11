@@ -244,7 +244,7 @@ body.running .pulse { background: var(--ok); animation: pulse 1.2s infinite; }
   overflow-y: auto;
 }
 #preview:empty::before {
-  content: "Ekhono kono result nei";
+  content: "No results yet";
   display: block;
   padding: 14px;
   text-align: center;

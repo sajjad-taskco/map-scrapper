@@ -54,7 +54,7 @@ $('start').addEventListener('click', async () => {
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!queries.length && !(tab.url || '').startsWith('https://www.google.com/maps')) {
-    $('status').textContent = 'Query lekho, othoba age Google Maps e search kore tarpor Start dao.';
+    $('status').textContent = 'Enter a query, or search on Google Maps first and then press Start.';
     return;
   }
   chrome.runtime.sendMessage({ type: 'job', queries, opts, tabId: tab.id });
@@ -63,11 +63,11 @@ $('start').addEventListener('click', async () => {
 $('stop').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'stop' }));
 
 $('clear').addEventListener('click', () => {
-  if (confirm('Sob result muche felbo? (History thakbe)')) chrome.runtime.sendMessage({ type: 'clear' });
+  if (confirm('Delete all results? (History is kept)')) chrome.runtime.sendMessage({ type: 'clear' });
 });
 
 $('resetSeen').addEventListener('click', () => {
-  if (confirm('History muche felbo? Porer bar ager jayga gulo abar ashbe.')) chrome.runtime.sendMessage({ type: 'resetSeen' });
+  if (confirm('Clear history? Previously scraped places will be scraped again next time.')) chrome.runtime.sendMessage({ type: 'resetSeen' });
 });
 
 function download(name, content, type) {

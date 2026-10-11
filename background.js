@@ -62,7 +62,7 @@ async function nextQuery() {
   if (query === undefined) {
     state.status = 'idle';
     state.current = '';
-    state.log = `Shesh! Mot ${state.results.length} ta result` + (state.skipped ? `, ${state.skipped} ta ager jayga skip.` : '.');
+    state.log = `Done! ${state.results.length} results total` + (state.skipped ? `, ${state.skipped} previous places skipped.` : '.');
     await save();
     return;
   }
@@ -142,11 +142,11 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
           // No query typed: scrape the Maps search already open in this tab.
           state.queue = [];
           state.current = '';
-          state.log = 'Current page scrape hocche...';
+          state.log = 'Scraping current page...';
           await save();
           chrome.tabs.sendMessage(msg.tabId, { type: 'start', opts: { ...state.opts, query: '' } }).catch(async () => {
             state.status = 'idle';
-            state.log = 'Ei tab e Google Maps search page khola nei (page reload kore abar try koro).';
+            state.log = 'No Google Maps search page open in this tab (reload the page and try again).';
             await save();
           });
         }
@@ -158,7 +158,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         state.status = 'idle';
         state.queue = [];
         state.pendingStart = false;
-        state.log = `Stopped. Mot ${state.results.length} ta result.`;
+        state.log = `Stopped. ${state.results.length} results total.`;
         await save();
         await saveSeen();
         if (state.tabId != null) chrome.tabs.sendMessage(state.tabId, { type: 'stop' }).catch(() => {});
@@ -189,7 +189,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
           state.seenCount++;
           saveSeenSoon();
         }
-        state.log = `${state.current || 'Scraping'} — ${state.results.length} ta result`;
+        state.log = `${state.current || 'Scraping'} — ${state.results.length} results`;
         await save();
         if (state.opts.emails && item.website && !item.emails) {
           findEmails(item.website).then(async (emails) => {
@@ -205,7 +205,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
 
       case 'skip': {
         state.skipped++;
-        state.log = `${state.current || 'Scraping'} — ${state.skipped} ta ager jayga skip`;
+        state.log = `${state.current || 'Scraping'} — ${state.skipped} previous places skipped`;
         await save();
         reply({ ok: true });
         break;
@@ -238,3 +238,6 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
 function jitterDelay() {
   return new Promise((r) => setTimeout(r, 1500 + Math.random() * 1500));
 }
+
+// On extension start/reload, write the history count into state so the panel shows it right away.
+load().then(save);

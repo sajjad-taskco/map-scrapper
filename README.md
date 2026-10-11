@@ -1,47 +1,47 @@
 # Map Scrapper (Chrome Extension)
 
-Google Maps থেকে business-এর তথ্য scrape করে CSV / JSON ফাইলে download করে। সম্পূর্ণ free — কোনো API key বা server লাগে না।
+Scrapes business info from Google Maps and downloads it as a CSV / JSON file. Completely free — no API key or server needed.
 
-## Install করার নিয়ম
+## Installation
 
-1. Chrome-এ `chrome://extensions` খোলো
-2. উপরে ডান দিকে **Developer mode** চালু করো
-3. **Load unpacked** চাপো → এই folder (`map-scrapper`) select করো
-4. Toolbar-এ extension-টা pin করে রাখো
+1. Open `chrome://extensions` in Chrome
+2. Turn on **Developer mode** in the top right
+3. Click **Load unpacked** → select this folder (`map-scrapper`)
+4. Pin the extension to the toolbar
 
-> Code-এ কোনো পরিবর্তন করলে `chrome://extensions`-এ গিয়ে extension-এর **Reload (⟳)** বাটন চাপতে হবে।
+> After any code change, go to `chrome://extensions` and click the extension's **Reload (⟳)** button.
 
-## ব্যবহার করার নিয়ম
+## Usage
 
-- Popup-এ search লেখো (প্রতি লাইনে একটা, যেমন `restaurants in Dhanmondi`) → **Start** চাপো
-- অথবা নিজে Google Maps-এ search করো, তারপর query box খালি রেখে **Start** চাপো
-- শেষ হলে **CSV download** / **JSON download** চাপো
+- Type searches in the panel (one per line, e.g. `restaurants in Dhanmondi`) → click **Start**
+- Or search on Google Maps yourself, leave the query box empty and click **Start**
+- When it finishes, click **CSV** / **JSON** to download
 
-### Option-গুলো
+### Options
 
-| Option | কী করে |
+| Option | What it does |
 |---|---|
-| Detail | প্রতিটা জায়গায় click করে phone, website, পুরো address, plus code আনে (ধীরে চলে, কিন্তু data সম্পূর্ণ হয়) |
-| Email খোঁজো | Business-এর website (homepage, /contact, /about) থেকে email বের করে |
-| আগেরগুলো skip করো | আগে scrape করা জায়গা (history-তে আছে) আবার নেয় না, click-ও করে না — শুধু নতুনগুলো আসে |
-| History Reset | History মুছে দেয়, পরের বার সব জায়গা আবার আসবে। **Clear** শুধু result মোছে, history না |
+| Detail mode | Clicks each place to get phone, website, full address and plus code (slower, but the data is complete) |
+| Find emails | Extracts emails from the business website (homepage, /contact, /about) |
+| Skip previous | Places already scraped (in history) are not taken or clicked again — only new ones come in |
+| History Reset | Clears the history, so all places will be scraped again next time. **Clear** only deletes results, not history |
 
-### Scroll করা data কীভাবে save হয়
+### How scrolled data is saved
 
-1. Extension Maps-এর বাম পাশের list-এ এখন যতগুলো জায়গা দেখা যাচ্ছে, সেগুলো একটা একটা করে পড়ে
-2. প্রতিটা জায়গা পড়ার সাথে সাথেই save করে — মাঝপথে Stop করলেও যা পাওয়া গেছে তা হারায় না
-3. তারপর নিজে নিজে list-টা নিচে scroll করে, নতুন জায়গা load হলে সেগুলো পড়ে (আগে পড়া জায়গা আবার নেয় না)
-4. এটা চলতে থাকে যতক্ষণ না:
-   - Maps "You've reached the end of the list" দেখায়, অথবা
-   - ৫ বার scroll করার পরও নতুন কিছু না আসে
+1. The extension reads the places currently visible in the Maps list on the left, one by one
+2. Each place is saved as soon as it is read — stopping midway doesn't lose what was already found
+3. Then it scrolls the list down by itself and reads newly loaded places (places already read are not taken again)
+4. This continues until:
+   - Maps shows "You've reached the end of the list", or
+   - Nothing new loads after scrolling 5 times
 
-## Data-এর column-গুলো
+## Data columns
 
 `query, name, category, rating, reviews, address, phone, website, emails, plus_code, latitude, longitude, cid, sponsored, url`
 
-## জরুরি কথা
+## Important notes
 
-- Google Maps-এর HTML class name (`.hfpxzc`, `.DUwDvf` ইত্যাদি) Google মাঝে মাঝে বদলায়। কোনো field খালি আসলে `content.js`-এর selector update করতে হবে।
-- Search URL-এ `hl=en` দেওয়া আছে যাতে English label আসে (parsing-এর জন্য দরকার)।
-- খুব বেশি বা খুব দ্রুত scrape করলে Google captcha দিতে পারে — delay দেওয়া আছে, তবুও একবারে হাজার হাজার না করাই ভালো।
-- Google-এর Terms of Service scraping-এর অনুমতি দেয় না — নিজের দায়িত্বে ব্যবহার করো।
+- Google sometimes changes Maps' HTML class names (`.hfpxzc`, `.DUwDvf` etc.). If a field comes back empty, the selectors in `content.js` need updating.
+- The search URL includes `hl=en` so labels come in English (needed for parsing).
+- Scraping too much or too fast can trigger a Google captcha — delays are built in, but it's still best not to scrape thousands at once.
+- Google's Terms of Service do not allow scraping — use at your own risk.
