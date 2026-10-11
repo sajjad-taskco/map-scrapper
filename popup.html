@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>Map Scrapper</h1>
+
+  <label for="queries">Search (protiti line e ekta query)</label>
+  <textarea id="queries" rows="4" placeholder="restaurants in Dhanmondi&#10;hotels in Cox's Bazar"></textarea>
+  <p class="hint">Faka rakhle current Google Maps tab er search scrape korbe.</p>
+
+  <div class="row">
+    <label for="max">Max result / query</label>
+    <input id="max" type="number" min="1" max="1000" value="100">
+  </div>
+  <label class="check"><input id="detailed" type="checkbox" checked> Detail (phone, website, full address) — slow</label>
+  <label class="check"><input id="emails" type="checkbox"> Website theke email khujo</label>
+
+  <div class="buttons">
+    <button id="start" class="primary">Start</button>
+    <button id="stop">Stop</button>
+  </div>
+
+  <details id="sheetBox">
+    <summary>Google Sheet e save</summary>
+    <label for="sheetId">Sheet ID ba link</label>
+    <input id="sheetId" type="text" placeholder="1mee2Fg6xN24yTYoiojw_I_MebDUhvIkUfnS1tX46FTY">
+    <label for="scriptUrl">Apps Script Web App URL</label>
+    <input id="scriptUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+    <label for="secret">Secret</label>
+    <input id="secret" type="password">
+    <label class="check"><input id="autoSheet" type="checkbox"> Scrape er shathe shathe Sheet e save koro</label>
+    <div class="buttons">
+      <button id="testSheet">Test</button>
+      <button id="syncSheet">Sob result Sheet e pathao</button>
+    </div>
+  </details>
+
+  <div id="status">Idle</div>
+  <div id="sheetStatus"></div>
+  <div id="count"><span id="n">0</span> results</div>
+
+  <div class="buttons">
+    <button id="csv">CSV download</button>
+    <button id="json">JSON download</button>
+    <button id="clear" class="danger">Clear</button>
+  </div>
+
+  <ul id="preview"></ul>
+
+  <script src="popup.js"></script>
+</body>
+</html>

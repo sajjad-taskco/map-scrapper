@@ -1,0 +1,49 @@
+body {
+  width: 340px;
+  margin: 0;
+  padding: 12px 14px;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: #202124;
+  background: #fff;
+}
+h1 { font-size: 16px; margin: 0 0 10px; }
+label { display: block; font-weight: 600; margin-bottom: 4px; }
+details { border: 1px solid #dadce0; border-radius: 6px; padding: 6px 8px; margin: 8px 0; }
+summary { font-weight: 600; cursor: pointer; }
+details label { margin-top: 6px; }
+#sheetStatus { color: #188038; font-size: 12px; min-height: 16px; }
+#sheetStatus.error { color: #d93025; }
+textarea, input[type="number"], input[type="text"], input[type="password"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font: inherit;
+}
+textarea { resize: vertical; }
+.hint { color: #5f6368; font-size: 11px; margin: 2px 0 8px; }
+.row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.row label { flex: 1; margin: 0; }
+.row input { width: 80px; }
+.check { font-weight: 400; display: flex; gap: 6px; align-items: center; margin: 4px 0; }
+.buttons { display: flex; gap: 6px; margin: 10px 0; }
+button {
+  flex: 1;
+  padding: 7px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #f8f9fa;
+  cursor: pointer;
+  font: inherit;
+}
+button:hover { background: #eef0f2; }
+button:disabled { opacity: .5; cursor: default; }
+.primary { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+.primary:hover { background: #1765cc; }
+.danger { color: #d93025; }
+#status { color: #5f6368; min-height: 18px; }
+#count { font-size: 20px; font-weight: 700; }
+#preview { list-style: none; padding: 0; margin: 0; max-height: 160px; overflow-y: auto; border-top: 1px solid #eee; }
+#preview li { padding: 4px 0; border-bottom: 1px solid #f1f3f4; }
+#preview small { color: #5f6368; display: block; }
