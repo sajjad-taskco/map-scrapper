@@ -6,12 +6,21 @@ const DEFAULT_STATE = {
   queue: [], // remaining queries
   current: '',
   pendingStart: false,
-  opts: { max: 100, detailed: true, emails: false },
+  opts: { detailed: true, emails: false },
   results: [],
   log: '',
+  seenCount: 0, // places in history
+  skipped: 0, // history places skipped in the current job
 };
 
 let state = null;
+
+// History of every place ever scraped, keyed by cid (or url). Kept in its own
+// storage key so Clear doesn't wipe it; content.js reads it to skip old places.
+let seen = null;
+let seenTimer = null;
+
+const placeKey = (item) => item.cid || item.url;
 
 // Clicking the toolbar icon opens the side panel (stays open until closed with ✕).
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -20,11 +29,26 @@ async function load() {
   if (state) return state;
   const { state: saved } = await chrome.storage.local.get('state');
   state = { ...DEFAULT_STATE, ...(saved || {}) };
+  const { seen: history } = await chrome.storage.local.get('seen');
+  seen = history || {};
+  if (!history) for (const r of state.results) seen[placeKey(r)] = 1; // first run: seed from existing results
+  state.seenCount = Object.keys(seen).length;
   return state;
 }
 
 function save() {
   return chrome.storage.local.set({ state });
+}
+
+// History can be large, so it is written at most once a second.
+function saveSeenSoon() {
+  clearTimeout(seenTimer);
+  seenTimer = setTimeout(saveSeen, 1000);
+}
+
+function saveSeen() {
+  clearTimeout(seenTimer);
+  return chrome.storage.local.set({ seen });
 }
 
 function mapsUrl(query) {
@@ -38,7 +62,7 @@ async function nextQuery() {
   if (query === undefined) {
     state.status = 'idle';
     state.current = '';
-    state.log = `Shesh! Mot ${state.results.length} ta result.`;
+    state.log = `Shesh! Mot ${state.results.length} ta result` + (state.skipped ? `, ${state.skipped} ta ager jayga skip.` : '.');
     await save();
     return;
   }
@@ -109,6 +133,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         state.opts = msg.opts;
         state.tabId = msg.tabId;
         state.status = 'running';
+        state.skipped = 0;
         if (msg.queries.length) {
           state.queue = [...msg.queries];
           await save();
@@ -135,6 +160,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         state.pendingStart = false;
         state.log = `Stopped. Mot ${state.results.length} ta result.`;
         await save();
+        await saveSeen();
         if (state.tabId != null) chrome.tabs.sendMessage(state.tabId, { type: 'stop' }).catch(() => {});
         reply({ ok: true });
         break;
@@ -158,6 +184,11 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
           item = msg.item;
           state.results.push(item);
         }
+        if (!seen[key]) {
+          seen[key] = 1;
+          state.seenCount++;
+          saveSeenSoon();
+        }
         state.log = `${state.current || 'Scraping'} — ${state.results.length} ta result`;
         await save();
         if (state.opts.emails && item.website && !item.emails) {
@@ -172,7 +203,26 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         break;
       }
 
+      case 'skip': {
+        state.skipped++;
+        state.log = `${state.current || 'Scraping'} — ${state.skipped} ta ager jayga skip`;
+        await save();
+        reply({ ok: true });
+        break;
+      }
+
+      case 'resetSeen': {
+        seen = {};
+        state.seenCount = 0;
+        await saveSeen();
+        await save();
+        reply({ ok: true });
+        break;
+      }
+
       case 'done': {
+        // Next query's content script reads history from storage, so write it now.
+        await saveSeen();
         if (state.status === 'running') {
           await jitterDelay();
           await nextQuery();

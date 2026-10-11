@@ -8,6 +8,7 @@ function render(state) {
   if (!state) return;
   results = state.results || [];
   $('n').textContent = results.length;
+  $('seenCount').textContent = state.seenCount || 0;
   $('status').textContent = state.log || (state.status === 'running' ? 'Running...' : 'Idle');
   const running = state.status === 'running';
   document.body.classList.toggle('running', running);
@@ -31,9 +32,9 @@ async function init() {
   const { state, prefs } = await chrome.storage.local.get(['state', 'prefs']);
   if (prefs) {
     $('queries').value = prefs.queries || '';
-    $('max').value = prefs.max || 100;
     $('detailed').checked = prefs.detailed !== false;
     $('emails').checked = !!prefs.emails;
+    $('skipSeen').checked = prefs.skipSeen !== false;
   }
   render(state);
 }
@@ -45,9 +46,9 @@ chrome.storage.onChanged.addListener((changes) => {
 $('start').addEventListener('click', async () => {
   const queries = $('queries').value.split('\n').map((q) => q.trim()).filter(Boolean);
   const opts = {
-    max: Math.max(1, parseInt($('max').value, 10) || 100),
     detailed: $('detailed').checked,
     emails: $('emails').checked,
+    skipSeen: $('skipSeen').checked,
   };
   await chrome.storage.local.set({ prefs: { queries: $('queries').value, ...opts } });
 
@@ -62,7 +63,11 @@ $('start').addEventListener('click', async () => {
 $('stop').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'stop' }));
 
 $('clear').addEventListener('click', () => {
-  if (confirm('Sob result muche felbo?')) chrome.runtime.sendMessage({ type: 'clear' });
+  if (confirm('Sob result muche felbo? (History thakbe)')) chrome.runtime.sendMessage({ type: 'clear' });
+});
+
+$('resetSeen').addEventListener('click', () => {
+  if (confirm('History muche felbo? Porer bar ager jayga gulo abar ashbe.')) chrome.runtime.sendMessage({ type: 'resetSeen' });
 });
 
 function download(name, content, type) {

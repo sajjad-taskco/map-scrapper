@@ -21,9 +21,10 @@ Google Maps থেকে business-এর তথ্য scrape করে CSV / JSO
 
 | Option | কী করে |
 |---|---|
-| Max result / query | প্রতিটা search-এ সর্বোচ্চ কয়টা জায়গা নেবে |
 | Detail | প্রতিটা জায়গায় click করে phone, website, পুরো address, plus code আনে (ধীরে চলে, কিন্তু data সম্পূর্ণ হয়) |
 | Email খোঁজো | Business-এর website (homepage, /contact, /about) থেকে email বের করে |
+| আগেরগুলো skip করো | আগে scrape করা জায়গা (history-তে আছে) আবার নেয় না, click-ও করে না — শুধু নতুনগুলো আসে |
+| History Reset | History মুছে দেয়, পরের বার সব জায়গা আবার আসবে। **Clear** শুধু result মোছে, history না |
 
 ### Scroll করা data কীভাবে save হয়
 
@@ -32,7 +33,6 @@ Google Maps থেকে business-এর তথ্য scrape করে CSV / JSO
 3. তারপর নিজে নিজে list-টা নিচে scroll করে, নতুন জায়গা load হলে সেগুলো পড়ে (আগে পড়া জায়গা আবার নেয় না)
 4. এটা চলতে থাকে যতক্ষণ না:
    - Maps "You've reached the end of the list" দেখায়, অথবা
-   - Max result পূর্ণ হয়, অথবা
    - ৫ বার scroll করার পরও নতুন কিছু না আসে
 
 ## Data-এর column-গুলো

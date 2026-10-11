@@ -266,3 +266,6 @@ body.running .pulse { background: var(--ok); animation: pulse 1.2s infinite; }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+/* ---------- History row ---------- */
+.history .chip { flex: none; padding: 4px 12px; }

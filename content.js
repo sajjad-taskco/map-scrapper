@@ -130,20 +130,26 @@ function reachedEnd(feed) {
 }
 
 async function scrape(opts) {
-  const { max = 100, detailed = true, query = '' } = opts;
+  const { detailed = true, query = '', skipSeen = true } = opts;
   stopped = false;
   running = true;
   let count = 0;
 
   const send = (msg) => chrome.runtime.sendMessage(msg).catch(() => {});
 
+  // Places scraped in earlier runs: skipped without clicking.
+  const { seen: history = {} } = skipSeen ? await chrome.storage.local.get('seen') : {};
+
   const feed = await waitFor(() => document.querySelector('div[role="feed"]'), 15000);
 
   // Search matched exactly one place: Maps opens its detail page directly.
   if (!feed) {
     const pane = await waitFor(() => document.querySelector('h1.DUwDvf') && document.querySelector('div[role="main"]'), 5000);
-    if (pane && !stopped) {
-      const item = { name: '', category: '', rating: '', reviews: '', address: '', phone: '', website: '', emails: '', plus_code: '', sponsored: '', ...parseUrl(location.href), url: location.href.split('?')[0], ...parseDetail(pane) };
+    const url = location.href.split('?')[0];
+    if (pane && !stopped && history[parseUrl(location.href).cid || url]) {
+      send({ type: 'skip' });
+    } else if (pane && !stopped) {
+      const item = { name: '', category: '', rating: '', reviews: '', address: '', phone: '', website: '', emails: '', plus_code: '', sponsored: '', ...parseUrl(location.href), url, ...parseDetail(pane) };
       await send({ type: 'item', item: { query, ...item } });
       count = 1;
     }
@@ -156,16 +162,21 @@ async function scrape(opts) {
   let idleRounds = 0;
   let prevName = '';
 
-  while (!stopped && count < max) {
+  // No limit: keeps going until Maps shows the end of the list or nothing new loads.
+  while (!stopped) {
     const links = [...feed.querySelectorAll('a.hfpxzc')];
     let gotNew = false;
 
     for (const link of links) {
-      if (stopped || count >= max) break;
+      if (stopped) break;
       const key = link.href.split('?')[0];
       if (seen.has(key)) continue;
       seen.add(key);
       gotNew = true;
+      if (history[parseUrl(link.href).cid || key]) {
+        send({ type: 'skip' });
+        continue;
+      }
 
       let item = parseCard(link);
       if (detailed) {
@@ -188,7 +199,7 @@ async function scrape(opts) {
       await send({ type: 'item', item: { query, ...item } });
     }
 
-    if (stopped || count >= max) break;
+    if (stopped) break;
     if (reachedEnd(feed)) break;
 
     feed.scrollTop = feed.scrollHeight;
