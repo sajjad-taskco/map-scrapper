@@ -5,50 +5,95 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h1>Map Scrapper</h1>
-
-  <label for="queries">Search (protiti line e ekta query)</label>
-  <textarea id="queries" rows="4" placeholder="restaurants in Dhanmondi&#10;hotels in Cox's Bazar"></textarea>
-  <p class="hint">Faka rakhle current Google Maps tab er search scrape korbe.</p>
-
-  <div class="row">
-    <label for="max">Max result / query</label>
-    <input id="max" type="number" min="1" max="1000" value="100">
-  </div>
-  <label class="check"><input id="detailed" type="checkbox" checked> Detail (phone, website, full address) — slow</label>
-  <label class="check"><input id="emails" type="checkbox"> Website theke email khujo</label>
-
-  <div class="buttons">
-    <button id="start" class="primary">Start</button>
-    <button id="stop">Stop</button>
-  </div>
-
-  <details id="sheetBox">
-    <summary>Google Sheet e save</summary>
-    <label for="sheetId">Sheet ID ba link</label>
-    <input id="sheetId" type="text" placeholder="1mee2Fg6xN24yTYoiojw_I_MebDUhvIkUfnS1tX46FTY">
-    <label for="scriptUrl">Apps Script Web App URL</label>
-    <input id="scriptUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec">
-    <label for="secret">Secret</label>
-    <input id="secret" type="password">
-    <label class="check"><input id="autoSheet" type="checkbox"> Scrape er shathe shathe Sheet e save koro</label>
-    <div class="buttons">
-      <button id="testSheet">Test</button>
-      <button id="syncSheet">Sob result Sheet e pathao</button>
+  <header>
+    <div class="logo"><img src="icons/icon48.png" alt=""></div>
+    <div class="title">
+      <h1>Map Scrapper</h1>
+      <p>Google Maps business data extractor</p>
     </div>
-  </details>
+    <span class="badge" id="badge">Idle</span>
+  </header>
 
-  <div id="status">Idle</div>
-  <div id="sheetStatus"></div>
-  <div id="count"><span id="n">0</span> results</div>
+  <main>
+    <section class="card">
+      <label class="field-label" for="queries">Search query</label>
+      <textarea id="queries" rows="3" placeholder="restaurants in Dhanmondi&#10;hotels in Cox's Bazar"></textarea>
+      <p class="hint">Protiti line e ekta query. Faka rakhle current Maps tab scrape korbe.</p>
 
-  <div class="buttons">
-    <button id="csv">CSV download</button>
-    <button id="json">JSON download</button>
-    <button id="clear" class="danger">Clear</button>
-  </div>
+      <div class="inline">
+        <label for="max">Max result / query</label>
+        <input id="max" type="number" min="1" max="1000" value="100">
+      </div>
 
-  <ul id="preview"></ul>
+      <label class="toggle">
+        <span><b>Detail mode</b><small>Phone, website, full address — slow</small></span>
+        <input id="detailed" type="checkbox" checked><i></i>
+      </label>
+      <label class="toggle">
+        <span><b>Email khujo</b><small>Website theke email ber kore</small></span>
+        <input id="emails" type="checkbox"><i></i>
+      </label>
+    </section>
+
+    <div class="actions">
+      <button id="start" class="btn primary">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Start
+      </button>
+      <button id="stop" class="btn ghost">
+        <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>Stop
+      </button>
+    </div>
+
+    <section class="stats">
+      <div class="count"><span id="n">0</span><small>results</small></div>
+      <div class="status-wrap">
+        <span class="pulse"></span>
+        <div id="status">Idle</div>
+      </div>
+    </section>
+
+    <div class="exports">
+      <button id="csv" class="chip">
+        <svg viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3zM5 18h14v2H5z"/></svg>CSV
+      </button>
+      <button id="json" class="chip">
+        <svg viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3zM5 18h14v2H5z"/></svg>JSON
+      </button>
+      <button id="clear" class="chip danger" title="Sob result muche felo">
+        <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7zM9 4h6l1 2H8z"/></svg>Clear
+      </button>
+    </div>
+
+    <details id="sheetBox" class="card">
+      <summary>
+        <svg viewBox="0 0 24 24" class="sheet-icon"><path d="M5 3h10l4 4v14H5zM8 11v2h3v-2zm5 0v2h3v-2zm-5 4v2h3v-2zm5 0v2h3v-2z"/></svg>
+        Google Sheet e save
+        <svg viewBox="0 0 24 24" class="chev"><path d="M7 10l5 5 5-5z"/></svg>
+      </summary>
+      <div class="sheet-body">
+        <label class="field-label" for="sheetId">Sheet ID ba link</label>
+        <input id="sheetId" type="text" placeholder="https://docs.google.com/spreadsheets/d/...">
+        <label class="field-label" for="scriptUrl">Apps Script Web App URL</label>
+        <input id="scriptUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+        <label class="field-label" for="secret">Secret</label>
+        <input id="secret" type="password" placeholder="••••••••">
+        <label class="toggle">
+          <span><b>Auto save</b><small>Scrape er shathe shathe Sheet e row add</small></span>
+          <input id="autoSheet" type="checkbox"><i></i>
+        </label>
+        <div class="actions small">
+          <button id="testSheet" class="btn ghost">Test</button>
+          <button id="syncSheet" class="btn ghost">Sob result pathao</button>
+        </div>
+      </div>
+    </details>
+    <div id="sheetStatus"></div>
+
+    <section class="list-head">
+      <span>Latest</span>
+    </section>
+    <ul id="preview"></ul>
+  </main>
 
   <script src="popup.js"></script>
 </body>

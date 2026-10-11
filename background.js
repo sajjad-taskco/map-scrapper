@@ -15,6 +15,9 @@ const DEFAULT_STATE = {
 
 let state = null;
 
+// Clicking the toolbar icon opens the side panel (stays open until closed with ✕).
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+
 async function load() {
   if (state) return state;
   const { state: saved } = await chrome.storage.local.get('state');

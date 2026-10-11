@@ -12,7 +12,10 @@ function render(state) {
   const ss = $('sheetStatus');
   ss.textContent = state.sheetLog || '';
   ss.className = /error|nai/i.test(state.sheetLog || '') ? 'error' : '';
-  $('start').disabled = state.status === 'running';
+  const running = state.status === 'running';
+  document.body.classList.toggle('running', running);
+  $('badge').textContent = running ? 'Running' : 'Idle';
+  $('start').disabled = running;
   $('stop').disabled = state.status !== 'running';
 
   const ul = $('preview');
