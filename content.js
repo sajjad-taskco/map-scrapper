@@ -49,7 +49,7 @@ function parseCard(link) {
     name: link.getAttribute('aria-label') || '',
     category: '',
     rating: text(card.querySelector('.MW4etd')),
-    reviews: parseNumber(text(card.querySelector('.UY7F9'))),
+    reviews: parseNumber(text(card.querySelector('.UY7F9'))) || parseNumber(((card.querySelector('span[role="img"][aria-label*="review" i]') || {}).ariaLabel || '').split(/stars?/i)[1]),
     address: '',
     phone: '',
     website: '',
@@ -75,9 +75,22 @@ function parseCard(link) {
   return data;
 }
 
-function findDetailPane(name) {
-  const panes = [...document.querySelectorAll('div[role="main"]')];
-  return panes.find((p) => p.getAttribute('aria-label') === name && p.querySelector('h1'));
+const norm = (s) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+// The detail pane for a clicked card: its h1 matches the card name, or the URL
+// already points at this place (names can differ slightly, e.g. extra Bangla name).
+function findDetailPane(name, placeKey, prevName) {
+  const n = norm(name);
+  const prev = norm(prevName);
+  const urlMatches = placeKey && location.href.includes(placeKey);
+  for (const h of document.querySelectorAll('h1.DUwDvf')) {
+    const t = norm(h.textContent);
+    if (!t) continue;
+    if (t === n || t.startsWith(n) || n.startsWith(t) || (urlMatches && t !== prev)) {
+      return h.closest('div[role="main"]') || document;
+    }
+  }
+  return null;
 }
 
 // Full data from the place detail panel (after clicking the card).
@@ -105,9 +118,10 @@ function parseDetail(pane) {
   if (ratingBox) {
     const r = text(ratingBox.querySelector('span[aria-hidden="true"]'));
     if (r) d.rating = r;
-    const rv = ratingBox.querySelector('span[aria-label*="review" i]');
-    if (rv) d.reviews = parseNumber(rv.getAttribute('aria-label'));
   }
+  // Review count: an element labelled like "1,252 reviews".
+  const rv = [...root.querySelectorAll('[aria-label]')].find((e) => /^[\d,.]+\s+reviews?$/i.test(e.getAttribute('aria-label').trim()));
+  if (rv) d.reviews = parseNumber(rv.getAttribute('aria-label'));
   return d;
 }
 
@@ -140,6 +154,7 @@ async function scrape(opts) {
 
   const seen = new Set();
   let idleRounds = 0;
+  let prevName = '';
 
   while (!stopped && count < max) {
     const links = [...feed.querySelectorAll('a.hfpxzc')];
@@ -156,10 +171,16 @@ async function scrape(opts) {
       if (detailed) {
         link.scrollIntoView({ block: 'center' });
         link.click();
-        const pane = await waitFor(() => findDetailPane(item.name), 8000);
+        const placeKey = (link.href.match(/!1s(0x[0-9a-f]+:0x[0-9a-f]+)/i) || [])[1];
+        const pane = await waitFor(() => findDetailPane(item.name, placeKey, prevName), 12000);
         if (pane) {
-          await sleep(400); // let buttons (phone/website) render
+          // Wait for the info rows (address/phone/website) to render.
+          await waitFor(() => pane.querySelector('[data-item-id="address"], [data-item-id^="phone:tel:"], [data-item-id="authority"]'), 4000);
+          await sleep(700);
           item = { ...item, ...parseDetail(pane) };
+          prevName = item.name;
+        } else {
+          console.warn('[Map Scrapper] detail pane paowa jay nai:', item.name);
         }
         await jitter(300, 800);
       }

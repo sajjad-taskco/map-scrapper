@@ -139,7 +139,8 @@ async function flushSheet() {
       ok = true;
       state.sheetPending.splice(0, batch.length);
       state.sheetTotal = (state.sheetTotal || 0) + res.added;
-      state.sheetLog = `Sheet "${res.sheet}" e ${state.sheetTotal} ta row save hoyeche`;
+      state.sheetUpdated = (state.sheetUpdated || 0) + (res.updated || 0);
+      state.sheetLog = `Sheet "${res.sheet}" e ${state.sheetTotal} ta notun row, ${state.sheetUpdated} ta row update`;
     } else {
       state.sheetLog = `Sheet error: ${res.error}`;
     }
@@ -210,6 +211,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         state.results = [];
         state.log = '';
         state.sheetTotal = 0;
+        state.sheetUpdated = 0;
         state.sheetLog = '';
         await save();
         reply({ ok: true });
@@ -217,25 +219,28 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       }
 
       case 'item': {
-        const item = msg.item;
-        const key = item.cid || item.url;
-        if (!state.results.some((r) => (r.cid || r.url) === key)) {
+        const key = msg.item.cid || msg.item.url;
+        let item = state.results.find((r) => (r.cid || r.url) === key);
+        if (item) {
+          // Seen before: fill in anything new (e.g. phone found on a re-scrape).
+          for (const [k, v] of Object.entries(msg.item)) if (v) item[k] = v;
+        } else {
+          item = msg.item;
           state.results.push(item);
-          state.log = `${state.current || 'Scraping'} — ${state.results.length} ta result`;
-          await save();
-          if (state.opts.emails && item.website) {
-            // Send to the sheet only after the email lookup, so the row is complete.
-            findEmails(item.website).then(async (emails) => {
-              const r = state.results.find((x) => (x.cid || x.url) === key) || item;
-              if (emails) {
-                r.emails = emails;
-                await save();
-              }
-              queueForSheet([r]);
-            });
-          } else {
+        }
+        state.log = `${state.current || 'Scraping'} — ${state.results.length} ta result`;
+        await save();
+        if (state.opts.emails && item.website && !item.emails) {
+          // Send to the sheet only after the email lookup, so the row is complete.
+          findEmails(item.website).then(async (emails) => {
+            if (emails) {
+              item.emails = emails;
+              await save();
+            }
             queueForSheet([item]);
-          }
+          });
+        } else {
+          queueForSheet([item]);
         }
         reply({ ok: true });
         break;

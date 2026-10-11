@@ -79,7 +79,7 @@ Extension নিজে থেকে তোমার Google Sheet-এ লিখ�
 
 - Scrape চলার সময় প্রতি ১০টা জায়গা (বা ৪ সেকেন্ড পর পর) Sheet-এ নতুন row যোগ হবে
 - Sheet খালি থাকলে প্রথম row-তে header নিজে বসিয়ে দেবে
-- Sheet-এ আগে থেকে আছে এমন জায়গা (একই `cid`/`url`) আবার যোগ হবে না
+- Sheet-এ আগে থেকে আছে এমন জায়গা (একই `cid`/`url`) নতুন row হিসেবে যোগ হবে না — বরং আগের row-টা নতুন data (যেমন phone) দিয়ে update হবে
 - আগের scrape করা result Sheet-এ পাঠাতে চাইলে **Sob result Sheet e pathao** চাপো
 
 ### সমস্যা হলে

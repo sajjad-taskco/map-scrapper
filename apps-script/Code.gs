@@ -33,33 +33,50 @@ function doPost(e) {
       const header = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
       const keyOf = (r) => String(r.cid || r.url || '');
 
-      // Skip places already in the sheet (matched by cid, else url).
-      const existing = new Set();
+      // Places already in the sheet (matched by cid, else url) are updated in place.
+      const rowOf = new Map(); // key -> sheet row number
       const lastRow = sheet.getLastRow();
+      const cidCol = header.indexOf('cid');
+      const urlCol = header.indexOf('url');
+      let existingValues = [];
       if (lastRow > 1) {
-        const cidCol = header.indexOf('cid');
-        const urlCol = header.indexOf('url');
-        const values = sheet.getRange(2, 1, lastRow - 1, header.length).getValues();
-        for (const row of values) {
+        existingValues = sheet.getRange(2, 1, lastRow - 1, header.length).getValues();
+        existingValues.forEach((row, i) => {
           const k = (cidCol >= 0 && row[cidCol]) || (urlCol >= 0 && row[urlCol]);
-          if (k) existing.add(String(k));
-        }
+          if (k) rowOf.set(String(k), i + 2);
+        });
       }
 
-      const rows = [];
+      const toCell = (v) => (v === undefined || v === null ? '' : String(v));
+      const newRows = [];
+      let updated = 0;
       for (const r of body.rows || []) {
         const k = keyOf(r);
-        if (k && existing.has(k)) continue;
-        existing.add(k);
-        rows.push(header.map((col) => (r[col] === undefined || r[col] === null ? '' : String(r[col]))));
+        const at = k ? rowOf.get(k) : undefined;
+        if (at === -1) continue; // same place twice in this batch
+        if (at) {
+          // Only overwrite cells where the new data has a value.
+          const old = existingValues[at - 2];
+          const merged = header.map((col, i) => (toCell(r[col]) !== '' ? toCell(r[col]) : old[i]));
+          if (merged.some((v, i) => String(v) !== String(old[i]))) {
+            const range = sheet.getRange(at, 1, 1, header.length);
+            range.setNumberFormat('@');
+            range.setValues([merged]);
+            existingValues[at - 2] = merged;
+            updated++;
+          }
+          continue;
+        }
+        if (k) rowOf.set(k, -1); // duplicate inside this batch
+        newRows.push(header.map((col) => toCell(r[col])));
       }
 
-      if (rows.length) {
-        const range = sheet.getRange(lastRow + 1, 1, rows.length, header.length);
-        range.setNumberFormat('@'); // keep phone numbers like +880... as text
-        range.setValues(rows);
+      if (newRows.length) {
+        const range = sheet.getRange(lastRow + 1, 1, newRows.length, header.length);
+        range.setNumberFormat('@'); // keep phone numbers like 01708... as text
+        range.setValues(newRows);
       }
-      return json({ ok: true, added: rows.length, skipped: (body.rows || []).length - rows.length, sheet: sheet.getName() });
+      return json({ ok: true, added: newRows.length, updated, sheet: sheet.getName() });
     } finally {
       lock.releaseLock();
     }
